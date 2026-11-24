@@ -11,3 +11,4 @@ dialog{border:1px solid #ffffff45;border-radius:12px;background:#111a29;color:wh
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 .role-heading{margin-top:1.15rem}
 #sign-in-pending:disabled{cursor:not-allowed}
+.team-avatar{display:block;object-fit:cover}
