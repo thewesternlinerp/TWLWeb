@@ -4,13 +4,11 @@ import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { guildId, isSnowflake, leaders, openSeal, readConfig, seal } from './config.mjs';
+import { createCommunity } from './community.mjs';
 
 const discordApi = 'https://discord.com/api/v10';
 const discordUserAgent = 'DiscordBot (https://github.com/thewesternlinerp/TWLWeb, 1.0.0)';
 const guildPath = `/guilds/${guildId}`;
-const departments = new Map([
-  ['MET','Metropolitan Police Service'],['LAS','London Ambulance Service'],['LFB','London Fire Brigade']
-]);
 const mediaTypes = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.jpg':'image/jpeg','.png':'image/png'};
 const publicFiles = new Set(['/index.html','/portal.html','/privacy.html','/config.js','/portal.js','/site.js','/style.css','/portal.css']);
 // Never grant Discord roles carrying these guild-wide moderator or administration permissions.
@@ -82,8 +80,6 @@ async function serveStatic(request, response, pathname) {
 export function createHandler(config, fetchDiscord = fetch) {
   const sessionName = config.secure ? '__Host-twl_session' : 'twl_session';
   const stateName = config.secure ? '__Host-twl_state' : 'twl_state';
-  const recentApplications = new Map();
-
   async function discord(path, options = {}) {
     const auth = options.bearer ? `Bearer ${options.bearer}` : `Bot ${config.botToken}`;
     let response;
@@ -104,6 +100,7 @@ export function createHandler(config, fetchDiscord = fetch) {
     if (response.status === 204) return true;
     return response.json();
   }
+  const community = createCommunity(config, discord, HttpError);
 
   async function memberById(id) {
     const member = await discord(`${guildPath}/members/${id}`);
@@ -165,42 +162,14 @@ export function createHandler(config, fetchDiscord = fetch) {
     const {user, nick} = auth.member;
     const present = ({id,name}) => ({id,name});
     return {
-      user:{ username:user.username, displayName:nick || user.global_name || user.username,
+      user:{ id:auth.id, username:user.username, displayName:nick || user.global_name || user.username,
         avatarUrl:user.avatar && /^[a-z0-9_]+$/i.test(user.avatar) ? `https://cdn.discordapp.com/avatars/${auth.id}/${user.avatar}.webp?size=96` : null },
       roles:roles.filter(role => auth.member.roles.includes(role.id) && role.id !== guildId).map(present),
       manageableRoles:auth.leadership ? roles.filter(mayManage).map(present) : [],
-      applicationsEnabled:Boolean(config.applicationsChannel)
+      applicationsEnabled:Boolean(config.applicationsChannel),
+      announcementsEnabled:Boolean(config.announcementsChannel),
+      leadership:auth.leadership
     };
-  }
-
-  async function apply(auth, data) {
-    const dept = departments.get(data.department);
-    const message = typeof data.message === 'string' ? data.message.trim() : '';
-    if (!config.applicationsChannel) throw new HttpError(404, 'Applications are not open through the portal.');
-    if (!dept || message.length < 30 || message.length > 1000) throw new HttpError(400, 'Select a department and write 30 to 1,000 characters.');
-    const channel = await discord(`/channels/${config.applicationsChannel}`);
-    const everyone = channel?.permission_overwrites?.find(overwrite => overwrite.id === guildId && overwrite.type === 0);
-    const viewChannel = 1n << 10n;
-    const privateChannel = everyone && (BigInt(everyone.deny) & viewChannel) !== 0n && (BigInt(everyone.allow) & viewChannel) === 0n;
-    if (!channel || channel.guild_id !== guildId || channel.type !== 0 || !privateChannel) {
-      throw new HttpError(503, 'The private application channel is awaiting configuration.');
-    }
-    const now = Date.now();
-    for (const [id, until] of recentApplications) if (until <= now) recentApplications.delete(id);
-    if (recentApplications.has(auth.id)) throw new HttpError(429, 'Please wait a minute before sending another application.');
-    recentApplications.set(auth.id, now + 60000);
-    try {
-      const sanitized = message.replace(/[`*_~|>]/g, char => '\\' + char);
-      const result = await discord(`/channels/${config.applicationsChannel}/messages`, {
-        method:'POST', body:{ allowed_mentions:{ parse:[] }, content:`**New portal application**\nDepartment: ${dept}\nApplicant Discord ID: ${auth.id}`,
-          embeds:[{description:sanitized}] }
-      });
-      if (!result) throw new HttpError(502, 'Could not deliver the application.');
-    } catch (error) {
-      recentApplications.delete(auth.id);
-      throw error;
-    }
-    return {message:'Application sent to the review team in Discord.'};
   }
 
   async function changeRole(auth, data) {
@@ -241,11 +210,23 @@ export function createHandler(config, fetchDiscord = fetch) {
         return reply(response,200,{signedOut:true});
       }
       if (request.method === 'GET' && pathname === '/api/me') return reply(response,200,await profile(await authenticate(request)));
-      if (request.method === 'POST' && ['/api/applications','/api/roles'].includes(pathname)) {
+      if (request.method === 'GET' && pathname === '/api/announcements') {
+        return reply(response,200,await community.announcements(await authenticate(request)));
+      }
+      const requestRoute = pathname.match(/^\/api\/(applications|tickets)(\/review)?$/);
+      if (requestRoute) {
+        const [,kind,review] = requestRoute;
+        if (request.method === 'GET' && !review) return reply(response,200,await community.list(await authenticate(request),kind));
+        if (request.method === 'POST') {
+          const data = await jsonInput(request,config);
+          const auth = await authenticate(request);
+          const result = review ? await community.review(auth,kind,data) : await community.submit(auth,kind,data);
+          return reply(response,200,result);
+        }
+      }
+      if (request.method === 'POST' && pathname === '/api/roles') {
         const data = await jsonInput(request,config);
-        const auth = await authenticate(request);
-        const result = pathname === '/api/applications' ? await apply(auth,data) : await changeRole(auth,data);
-        return reply(response,200,result);
+        return reply(response,200,await changeRole(await authenticate(request),data));
       }
       return reply(response,404,{error:'Page not found.'});
     } catch (error) {

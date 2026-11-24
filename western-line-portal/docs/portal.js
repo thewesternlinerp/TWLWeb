@@ -11,6 +11,9 @@ const navigation = [...document.querySelectorAll('[data-view]')];
 let currentView = 'overview';
 let memberRoles = [];
 let sessionVersion = 0;
+let memberId = '';
+const communityViews = new Set(['applications','tickets','announcements']);
+const feedRequests = new Map();
 
 function failMessage(code) {
   const descriptions = {
@@ -49,6 +52,7 @@ function showView(requested = location.hash.slice(1), moveFocus = false) {
     else link.removeAttribute('aria-current');
   }
   element('current-view').textContent = selected.textContent;
+  if (communityViews.has(currentView) && previous !== currentView) loadFeed(currentView);
   if (moveFocus && previous !== currentView) {
     element('main').focus();
     window.scrollTo(0, 0);
@@ -74,9 +78,13 @@ function renderRoles() {
 }
 
 function populate(member) {
-  const { user, roles, manageableRoles, applicationsEnabled } = member;
+  const { user, roles, manageableRoles, applicationsEnabled, announcementsEnabled } = member;
+  memberId = user.id;
   memberRoles = roles;
   renderRoles();
+  for (const badge of document.querySelectorAll('[data-department-role]')) {
+    badge.hidden = !roles.some(role => role.id === badge.dataset.departmentRole);
+  }
 
   element('member-name').textContent = user.displayName;
   element('member-handle').textContent = user.username;
@@ -91,7 +99,11 @@ function populate(member) {
   if (manageableRoles.some(role => role.id === previousRole)) roleSelect.value = previousRole;
 
   const available = new Set(['overview', 'profile']);
-  if (applicationsEnabled) available.add('applications');
+  if (applicationsEnabled) {
+    available.add('applications');
+    available.add('tickets');
+  }
+  if (announcementsEnabled) available.add('announcements');
   if (manageableRoles.length) available.add('role-management');
   for (const link of navigation) link.hidden = !available.has(link.dataset.view);
   element('guest-sign-in').hidden = true;
@@ -102,6 +114,7 @@ function populate(member) {
 
 function showSignedOut(message) {
   sessionVersion += 1;
+  memberId = '';
   memberRoles = [];
   roleSearch.value = '';
   renderRoles();
@@ -109,6 +122,11 @@ function showSignedOut(message) {
   element('member-handle').textContent = '';
   element('avatar').src = 'media/roundel.png';
   element('manageable-roles').replaceChildren();
+  for (const badge of document.querySelectorAll('[data-department-role]')) badge.hidden = true;
+  for (const feed of communityViews) {
+    element(`${feed}-list`).replaceChildren();
+    element(`${feed}-loading`).textContent = '';
+  }
   element('welcome-title').textContent = 'Member portal';
   element('welcome-subtitle').textContent = 'Your account and departments for London FiveM roleplay.';
   for (const link of navigation) link.hidden = link.dataset.view !== 'overview';
@@ -168,6 +186,78 @@ async function handleAction(control, feedback, action) {
   }
 }
 
+function textNode(tag, text, className) {
+  const node = document.createElement(tag);
+  node.textContent = text;
+  if (className) node.className = className;
+  return node;
+}
+
+function displayDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-GB', {dateStyle:'medium'});
+}
+
+function requestRow(record, statuses, feed, feedback) {
+  const row = document.createElement('li');
+  row.append(textNode('h3', record.subject), textNode('span', record.status, 'request-status'));
+  const metadata = [displayDate(record.date), record.requester !== memberId ? `Discord ID ${record.requester}` : '']
+    .filter(Boolean).join(' · ');
+  if (metadata) row.append(textNode('p', metadata));
+  row.append(textNode('p', record.detail, 'request-detail'));
+  if (statuses.length) {
+    const controls = document.createElement('div');
+    controls.className = 'request-controls';
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', `Status for ${record.subject}`);
+    select.replaceChildren(...statuses.map(status => new Option(status, status)));
+    select.value = record.status;
+    const button = textNode('button', 'Update status', 'dashboard-button dashboard-button-quiet');
+    button.type = 'button';
+    button.addEventListener('click', () => handleAction(button, feedback, async () => {
+      await post(`api/${feed}/review`, {id:record.id,status:select.value});
+      await loadFeed(feed);
+      if (!feedback.textContent) feedback.textContent = 'Status updated.';
+    }));
+    controls.append(select,button);
+    row.append(controls);
+  }
+  return row;
+}
+
+function announcementRow(post) {
+  const row = document.createElement('li');
+  const date = displayDate(post.date);
+  if (date) row.append(textNode('p', date));
+  if (post.text) row.append(textNode('p', post.text, 'request-detail'));
+  const link = textNode('a', 'Open in Discord');
+  link.href = post.url;
+  row.append(link);
+  return row;
+}
+
+async function loadFeed(feed) {
+  const feedback = element(`${feed}-loading`);
+  const list = element(`${feed}-list`);
+  const ticket = Symbol(feed);
+  const version = sessionVersion;
+  feedRequests.set(feed,ticket);
+  feedback.textContent = 'Loading…';
+  try {
+    const data = await request(`api/${feed}`);
+    if (feedRequests.get(feed) !== ticket || version !== sessionVersion) return;
+    const rows = feed === 'announcements' ? data.posts.map(announcementRow)
+      : data.records.map(record => requestRow(record,data.statuses,feed,feedback));
+    list.replaceChildren(...rows);
+    feedback.textContent = rows.length ? '' : 'Nothing to show yet.';
+  } catch (error) {
+    if (feedRequests.get(feed) !== ticket || version !== sessionVersion) return;
+    list.replaceChildren();
+    if (error.status === 401 || ['not_member','pending'].includes(error.code)) showSignedOut(error.message);
+    else feedback.textContent = error.message;
+  }
+}
+
 window.addEventListener('hashchange', () => {
   if (location.hash !== '#main') showView(location.hash.slice(1), true);
 });
@@ -188,7 +278,8 @@ signOut.addEventListener('click', async () => {
     await post('api/logout');
     element('application-form').reset();
     element('role-form').reset();
-    for (const id of ['sync-feedback','application-feedback','role-feedback']) element(id).textContent = '';
+    element('ticket-form').reset();
+    for (const id of ['sync-feedback','application-feedback','role-feedback','ticket-feedback']) element(id).textContent = '';
     showSignedOut('You’ve signed out.');
     signIn.focus();
   } catch {
@@ -197,17 +288,22 @@ signOut.addEventListener('click', async () => {
     signOut.disabled = false;
   }
 });
-element('application-form').addEventListener('submit', event => {
-  event.preventDefault();
-  const form = event.currentTarget;
-  const data = Object.fromEntries(new FormData(form));
-  const feedback = element('application-feedback');
-  handleAction(event.submitter, feedback, async () => {
-    const result = await post('api/applications', data);
-    form.reset();
-    feedback.textContent = result.message;
+for (const [formId,feedbackId,feed] of [
+  ['application-form','application-feedback','applications'], ['ticket-form','ticket-feedback','tickets']
+]) {
+  element(formId).addEventListener('submit', event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
+    const feedback = element(feedbackId);
+    handleAction(event.submitter, feedback, async () => {
+      const result = await post(`api/${feed}`,data);
+      form.reset();
+      feedback.textContent = result.message;
+      await loadFeed(feed);
+    });
   });
-});
+}
 element('role-form').addEventListener('submit', event => {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.currentTarget));

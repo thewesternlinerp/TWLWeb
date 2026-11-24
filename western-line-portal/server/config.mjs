@@ -12,18 +12,20 @@ export function readConfig(env) {
     throw new Error('PUBLIC_ORIGIN must be an HTTPS origin, or HTTP localhost for development.');
   }
   const { DISCORD_CLIENT_ID: clientId, DISCORD_CLIENT_SECRET: clientSecret,
-    DISCORD_BOT_TOKEN: botToken, SESSION_SECRET: sessionSecret, APPLICATIONS_CHANNEL_ID: applicationsChannel } = env;
+    DISCORD_BOT_TOKEN: botToken, SESSION_SECRET: sessionSecret, APPLICATIONS_CHANNEL_ID: applicationsChannel,
+    ANNOUNCEMENTS_CHANNEL_ID: announcementsChannel } = env;
   const configured = Boolean(clientSecret || botToken);
   if (configured && (!isSnowflake(clientId) || !clientSecret || !botToken || !sessionSecret || Buffer.byteLength(sessionSecret) < 32)) {
     throw new Error('Set DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN and a SESSION_SECRET of at least 32 bytes.');
   }
   const roleIds = (env.MANAGEABLE_ROLE_IDS || '').split(',').map(id => id.trim()).filter(Boolean);
-  if (roleIds.some(id => !isSnowflake(id) || id === guildId) || (applicationsChannel && !isSnowflake(applicationsChannel))) {
-    throw new Error('Check your Discord role IDs and applications channel ID.');
+  if (roleIds.some(id => !isSnowflake(id) || id === guildId)
+    || [applicationsChannel, announcementsChannel].some(id => id && !isSnowflake(id))) {
+    throw new Error('Check your Discord role and channel IDs.');
   }
   return {
     configured, port, origin: origin.origin, secure: !development, clientId, clientSecret, botToken,
-    sessionSecret: sessionSecret || randomBytes(32), roleIds: new Set(roleIds), applicationsChannel,
+    sessionSecret: sessionSecret || randomBytes(32), roleIds: new Set(roleIds), applicationsChannel, announcementsChannel,
     redirectUri: new URL('/auth/callback', origin).href
   };
 }

@@ -10,11 +10,13 @@ const member = '123450000000000001';
 const role = '123450000000000002';
 const adminRole = '123450000000000003';
 const channel = '123450000000000004';
+const announcements = '123450000000000006';
+const announcementId = '123450000000000007';
 const origin = 'https://portal.example.test';
 const config = readConfig({
   PUBLIC_ORIGIN:origin, DISCORD_CLIENT_ID:'123450000000000005', DISCORD_CLIENT_SECRET:'fake-secret',
   DISCORD_BOT_TOKEN:'fake-bot-test-token', SESSION_SECRET:'fake-session-key-for-integration-tests-only',
-  MANAGEABLE_ROLE_IDS:`${role},${adminRole}`, APPLICATIONS_CHANNEL_ID:channel
+  MANAGEABLE_ROLE_IDS:`${role},${adminRole}`, APPLICATIONS_CHANNEL_ID:channel, ANNOUNCEMENTS_CHANNEL_ID:announcements
 });
 
 test('Render uses its public HTTPS URL and can boot before Discord is connected', () => {
@@ -39,11 +41,13 @@ test('Render uses its public HTTPS URL and can boot before Discord is connected'
 test('Discord authentication, membership, applications and leadership-only role changes', async t => {
   const membership = new Map([[leader,{user:{username:'sean'},roles:[role]}],[member,{user:{username:'member'},roles:[]}]]);
   const mutations = [];
+  const records = [];
   let isChannelPrivate = true;
   async function discordTestDouble(url, {method, body, headers}) {
     assert.equal(new URL(url).hostname, 'discord.com');
     assert.match(headers['User-Agent'], /^DiscordBot \(/);
-    const path = new URL(url).pathname.replace('/api/v10','');
+    const requestUrl = new URL(url);
+    const path = requestUrl.pathname.replace('/api/v10','');
     if (path === '/oauth2/token') {
       assert.equal(body.get('redirect_uri'), origin + '/auth/callback');
       return Response.json({access_token:body.get('code')});
@@ -51,6 +55,7 @@ test('Discord authentication, membership, applications and leadership-only role 
     if (path === '/users/@me') return Response.json({id:headers.Authorization.slice(7)});
     assert.equal(headers.Authorization, 'Bot fake-bot-test-token');
     const base = `/guilds/${guildId}`;
+    if (path === base) return Response.json({owner_id:leader});
     if (path === base + '/roles') {
       return Response.json([
         {id:role,name:'MET Member',permissions:'0',position:2},
@@ -70,9 +75,27 @@ test('Discord authentication, membership, applications and leadership-only role 
       return Response.json({id:channel,guild_id:guildId,type:0,
         permission_overwrites:[{id:guildId,type:0,allow:'0',deny:isChannelPrivate ? '1024' : '0'}]});
     }
+    if (path === `/channels/${announcements}`) {
+      return Response.json({id:announcements,guild_id:guildId,type:5,
+        permission_overwrites:[{id:guildId,type:0,allow:'0',deny:'1024'}]});
+    }
+    if (path === `/channels/${announcements}/messages`) {
+      assert.equal(requestUrl.searchParams.get('limit'),'12');
+      return Response.json([{id:announcementId,type:0,content:'Server opening',timestamp:'2026-11-24T18:00:00Z'}]);
+    }
     if (path === `/channels/${channel}/messages`) {
+      if (method === 'GET') return Response.json(records);
       mutations.push({path,method,body:JSON.parse(body)});
-      return Response.json({id:'123450000000000009'});
+      const record = {id:`1234500000000001${String(records.length).padStart(2,'0')}`,
+        author:{id:config.clientId},timestamp:'2026-11-24T18:00:00Z',embeds:JSON.parse(body).embeds};
+      records.push(record);
+      return Response.json(record);
+    }
+    if (path.startsWith(`/channels/${channel}/messages/`)) {
+      const record = records.find(item => path.endsWith('/'+item.id));
+      if (!record) return new Response(null,{status:404});
+      if (method === 'PATCH') record.embeds = JSON.parse(body).embeds;
+      return Response.json(record);
     }
     assert.fail(`Unexpected Discord request: ${method} ${path}`);
   }
@@ -138,6 +161,21 @@ test('Discord authentication, membership, applications and leadership-only role 
   assert.deepEqual(mutations[2].body.allowed_mentions,{parse:[]});
   assert.match(mutations[2].body.content,/London Ambulance Service/);
   assert.equal((await post('/api/applications',memberSession,application)).status,429);
+  const support = {subject:'Trouble getting in',message:'Could someone help me connect to the FiveM server?'};
+  assert.equal((await post('/api/tickets',memberSession,support)).status,200);
+  assert.equal((await post('/api/tickets',leaderSession,support)).status,200);
+  const own = await (await get('/api/tickets',memberSession)).json();
+  assert.equal(own.records.length,1);
+  assert.deepEqual(own.statuses,[]);
+  const queue = await (await get('/api/tickets',leaderSession)).json();
+  assert.equal(queue.records.length,2);
+  const review = {id:own.records[0].id,status:'Closed'};
+  assert.equal((await post('/api/tickets/review',memberSession,review)).status,403);
+  assert.equal((await post('/api/applications/review',leaderSession,{...review,status:'Approved'})).status,404);
+  assert.equal((await post('/api/tickets/review',leaderSession,review)).status,200);
+  assert.equal((await (await get('/api/tickets',memberSession)).json()).records[0].status,'Closed');
+  assert.equal((await get('/api/announcements',memberSession)).status,403);
+  assert.equal((await (await get('/api/announcements',leaderSession)).json()).posts[0].text,'Server opening');
 
   membership.delete(member);
   assert.equal((await get('/api/me',memberSession)).status,403);

@@ -42,7 +42,8 @@ Render's Free web service can go idle. The first portal visit after a period of 
 | `DISCORD_CLIENT_SECRET` | OAuth client secret from the same application |
 | `DISCORD_BOT_TOKEN` | Rotated token for the guild bot |
 | `SESSION_SECRET` | Random signing key of at least 32 bytes. Generate locally with `node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"` |
-| `APPLICATIONS_CHANNEL_ID` | Optional. Private Discord text channel ID to receive applications |
+| `APPLICATIONS_CHANNEL_ID` | Optional. Private Discord text channel for applications and support tickets. Deny View Channel to `@everyone` and grant direct access to the bot and the three leadership accounts. |
+| `ANNOUNCEMENTS_CHANNEL_ID` | Optional. The guild text or announcements channel to display in the member portal. Members need Discord permission to view it and read message history. |
 | `MANAGEABLE_ROLE_IDS` | Optional. Comma-separated role IDs approved for portal changes |
 
 To run with a local `.env`, copy `.env.example` to `.env`, fill the settings and run `node --env-file-if-exists=.env server/index.mjs`. Production needs a stable session secret across restarts. The portal does not need a database. Discord stores the application messages and its own role audit log.
@@ -51,7 +52,8 @@ To run with a local `.env`, copy `.env.example` to `.env`, fill the settings and
 
 - Sign-in requires current membership in The Western Line’s Discord server. The bot reads live Discord roles when the portal loads and when a member selects **Refresh Discord roles**.
 - WesternSpi, Sean and Zac can add or remove explicitly configured member roles when signed in using the listed leadership accounts. Managed roles and moderator or administrator roles are blocked. Discord still enforces the bot’s role hierarchy.
-- Members can send MET, LAS and LFB applications when a private review channel is configured. The team reviews applications in Discord. Members can’t award themselves roles.
+- Members can send and track recent MET, LAS and LFB applications and support tickets when the private review channel is configured. Leadership can review their status in the portal. Role assignments are managed separately.
+- The announcements page shows the latest 12 Discord messages where the member has permission to view channel history. Discord remains the source for the original posts and attachments.
 - The FiveM connection guide uses the publicly listed `cfx.re/join/vqqgxbx` code. Cfx.re returned the matching join token during setup. An in-game connection was not tested. For in-game duties or CAD, use the relevant installed FiveM resources and Discord instructions.
 
 Run `node --test` for the local integration checks. They simulate Discord, so finish deployment by verifying sign-in with an actual guild member, refreshing the roles, testing an approved role with a test member, and checking that an application reaches the private channel.

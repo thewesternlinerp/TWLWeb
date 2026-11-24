@@ -7,8 +7,8 @@
   <title>Member portal | The Western Line</title>
   <link rel="icon" href="media/roundel.png">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="portal.css?v=2">
-  <script type="module" src="portal.js?v=2"></script>
+  <link rel="stylesheet" href="portal.css?v=3">
+  <script type="module" src="portal.js?v=3"></script>
 </head>
 <body class="portal-dashboard">
   <a href="#main" class="skip">Skip to content</a>
@@ -22,6 +22,8 @@
         <a href="#overview" data-view="overview" aria-current="page">Overview</a>
         <a href="#profile" data-view="profile" hidden>My profile</a>
         <a href="#applications" data-view="applications" hidden>Applications</a>
+        <a href="#tickets" data-view="tickets" hidden>Support tickets</a>
+        <a href="#announcements" data-view="announcements" hidden>Announcements</a>
         <a href="#role-management" data-view="role-management" hidden>Manage roles</a>
       </nav>
       <nav class="dashboard-community" aria-label="Community">
@@ -68,21 +70,25 @@
                 <span class="department-code" aria-hidden="true">MET</span>
                 <h3>Metropolitan Police Service</h3>
                 <p>Response, neighbourhood patrol and roads policing.</p>
+                <span class="department-member" data-department-role="1566133661093601461" hidden>Member</span>
               </article>
               <article class="department-card department-las">
                 <span class="department-code" aria-hidden="true">LAS</span>
                 <h3>London Ambulance Service</h3>
                 <p>Emergency medicine, patient care and transport.</p>
+                <span class="department-member" data-department-role="1566151585590157564" hidden>Member</span>
               </article>
               <article class="department-card department-lfb">
                 <span class="department-code" aria-hidden="true">LFB</span>
                 <h3>London Fire Brigade</h3>
                 <p>Fire response, rescue and incident support.</p>
+                <span class="department-member" data-department-role="1566134026551427152" hidden>Member</span>
               </article>
               <article class="department-card department-civ">
                 <span class="department-code" aria-hidden="true">CIV</span>
                 <h3>Civilian Operations</h3>
                 <p>Create a character and build your own story in London.</p>
+                <span class="department-member" data-department-role="1566156728893177918" hidden>Member</span>
               </article>
             </div>
           </section>
@@ -138,15 +144,52 @@
 
         <section id="applications" class="dashboard-view" aria-labelledby="applications-title" hidden>
           <h1 id="applications-title">Applications</h1>
-          <div class="dashboard-panel dashboard-form-panel">
-            <h2>Apply to a department</h2>
-            <p>Your application goes to the review team in Discord.</p>
-            <form id="application-form">
-              <label>Department<select name="department" required><option value="">Select a department</option><option value="MET">Metropolitan Police Service</option><option value="LAS">London Ambulance Service</option><option value="LFB">London Fire Brigade</option></select></label>
-              <label>Why would you like to join?<textarea name="message" required minlength="30" maxlength="1000" rows="5" placeholder="Tell us what interests you and any roleplay experience you have."></textarea></label>
-              <button class="dashboard-button dashboard-button-primary" type="submit">Send application</button>
-              <p class="dashboard-feedback" role="status" id="application-feedback"></p>
-            </form>
+          <div class="dashboard-community-grid">
+            <div class="dashboard-panel dashboard-form-panel">
+              <h2>Apply to a department</h2>
+              <p>Your application goes to the review team in Discord.</p>
+              <form id="application-form">
+                <label>Department<select name="department" required><option value="">Select a department</option><option value="MET">Metropolitan Police Service</option><option value="LAS">London Ambulance Service</option><option value="LFB">London Fire Brigade</option></select></label>
+                <label>Why would you like to join?<textarea name="message" required minlength="30" maxlength="1000" rows="5" placeholder="Tell us what interests you and any roleplay experience you have."></textarea></label>
+                <button class="dashboard-button dashboard-button-primary" type="submit">Send application</button>
+                <p class="dashboard-feedback" role="status" id="application-feedback"></p>
+              </form>
+            </div>
+            <section class="dashboard-panel" aria-labelledby="applications-list-title">
+              <h2 id="applications-list-title">Recent applications</h2>
+              <p id="applications-loading" role="status"></p>
+              <ul class="request-list" id="applications-list"></ul>
+            </section>
+          </div>
+        </section>
+
+        <section id="tickets" class="dashboard-view" aria-labelledby="tickets-title" hidden>
+          <h1 id="tickets-title">Support tickets</h1>
+          <div class="dashboard-community-grid">
+            <div class="dashboard-panel dashboard-form-panel">
+              <h2>Open a support ticket</h2>
+              <p>Send a private request to the Western Line review team.</p>
+              <form id="ticket-form">
+                <label>Subject<input name="subject" type="text" required minlength="5" maxlength="90"></label>
+                <label>How can we help?<textarea name="message" required minlength="30" maxlength="1000" rows="5"></textarea></label>
+                <button class="dashboard-button dashboard-button-primary" type="submit">Open ticket</button>
+                <p class="dashboard-feedback" role="status" id="ticket-feedback"></p>
+              </form>
+              <a class="dashboard-button dashboard-button-quiet" href="https://discord.com/channels/1566132871163412581/1570764465304117248">Support in Discord</a>
+            </div>
+            <section class="dashboard-panel" aria-labelledby="tickets-list-title">
+              <h2 id="tickets-list-title">Recent tickets</h2>
+              <p id="tickets-loading" role="status"></p>
+              <ul class="request-list" id="tickets-list"></ul>
+            </section>
+          </div>
+        </section>
+
+        <section id="announcements" class="dashboard-view" aria-labelledby="announcements-title" hidden>
+          <h1 id="announcements-title">Announcements</h1>
+          <div class="dashboard-panel dashboard-announcements">
+            <p id="announcements-loading" role="status"></p>
+            <ul class="request-list" id="announcements-list"></ul>
           </div>
         </section>
 
