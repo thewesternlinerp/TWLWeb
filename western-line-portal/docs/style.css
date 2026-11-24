@@ -10,3 +10,4 @@ dialog{border:1px solid #ffffff45;border-radius:12px;background:#111a29;color:wh
 @media(max-width:370px){.wrap{width:calc(100% - 24px)}.hero h1{font-size:3.3rem}.dept-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 .role-heading{margin-top:1.15rem}
+#sign-in-pending:disabled{cursor:not-allowed}

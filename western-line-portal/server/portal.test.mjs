@@ -17,6 +17,25 @@ const config = readConfig({
   MANAGEABLE_ROLE_IDS:`${role},${adminRole}`, APPLICATIONS_CHANNEL_ID:channel
 });
 
+test('Render uses its public HTTPS URL and can boot before Discord is connected', () => {
+  const env = {
+    PORT:'10000',
+    RENDER_EXTERNAL_URL:'https://twl-member-portal.onrender.com',
+    SESSION_SECRET:'fake-session-key-for-integration-tests-only',
+    DISCORD_CLIENT_ID:'123450000000000005'
+  };
+  const preview = readConfig(env);
+  assert.equal(preview.configured,false);
+  assert.equal(preview.port,10000);
+  assert.equal(preview.secure,true);
+  assert.equal(preview.redirectUri,'https://twl-member-portal.onrender.com/auth/callback');
+  assert.equal(readConfig({...env, PUBLIC_ORIGIN:origin}).origin, origin);
+  assert.throws(() => readConfig({...env, DISCORD_CLIENT_SECRET:'fake-secret'}), /Set DISCORD_CLIENT_ID/);
+  assert.equal(readConfig({
+    ...env, DISCORD_CLIENT_SECRET:'fake-secret', DISCORD_BOT_TOKEN:'fake-bot-test-token'
+  }).configured,true);
+});
+
 test('Discord authentication, membership, applications and leadership-only role changes', async t => {
   const membership = new Map([[leader,{user:{username:'sean'},roles:[role]}],[member,{user:{username:'member'},roles:[]}]]);
   const mutations = [];

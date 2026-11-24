@@ -3,6 +3,7 @@ import { portalOrigin } from './config.js';
 const element = id => document.getElementById(id);
 const status = element('portal-status');
 const signIn = element('sign-in');
+const signInPending = element('sign-in-pending');
 const signOut = element('sign-out');
 const panels = element('member-panels');
 
@@ -55,6 +56,7 @@ function populate(member) {
   if (manageableRoles.some(role => role.id === previousRole)) roleSelect.value = previousRole;
   panels.hidden = false;
   signIn.hidden = true;
+  signInPending.hidden = true;
   signOut.hidden = false;
   status.textContent = 'Connected to The Western Line Discord.';
 }
@@ -62,23 +64,24 @@ function populate(member) {
 function showSignedOut(message) {
   panels.hidden = true;
   signOut.hidden = true;
+  signInPending.hidden = true;
   signIn.hidden = false;
   status.textContent = message;
 }
 
 async function initialise() {
-  const api = await request('api/status').catch(() => null);
+  const api = await request('api/status', { signal: AbortSignal.timeout(6000) }).catch(() => null);
   if (!api) {
     if (/^https:\/\/[^/?#]+\/?$/.test(portalOrigin)) {
       signIn.href = new URL('/auth/discord', portalOrigin).href;
-      showSignedOut('Sign in to open the secure member portal.');
+      showSignedOut('Continue to Discord to sign in to the member portal.');
     } else {
-      status.textContent = 'Discord sign-in is awaiting configuration. You can still browse the site and view the joining instructions.';
+      status.textContent = 'Discord sign-in is offline while the login service is being set up.';
     }
     return;
   }
   if (!api.configured) {
-    status.textContent = 'Discord sign-in is awaiting configuration. You can still browse the site and view the joining instructions.';
+    status.textContent = 'Discord sign-in is offline while the login service is being set up.';
     return;
   }
   const auth = new URL(location.href).searchParams.get('auth');

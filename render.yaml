@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: twl-member-portal
+    runtime: node
+    plan: free
+    branch: main
+    rootDir: western-line-portal
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/status
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DISCORD_CLIENT_ID
+        value: "1566252502419247164"
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_BOT_TOKEN
+        sync: false

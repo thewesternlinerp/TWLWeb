@@ -8,9 +8,9 @@
     <p class="kicker"><span></span> The Western Line</p>
     <h1>Member portal.</h1>
     <p>Sign in with Discord to view your Western Line roles and apply to a department.</p>
-    <p class="portal-status muted" id="portal-status" role="status">Checking portal availability…</p>
+    <p class="portal-status muted" id="portal-status" role="status">Checking Discord sign-in…</p>
     <noscript><p>Enable JavaScript to sign in and use the member tools.</p></noscript>
-    <div class="actions"><a hidden id="sign-in" class="button button-light" href="auth/discord">Continue with Discord</a><a class="button button-glass" href="./#join">How to join</a><button hidden class="button button-glass" type="button" id="sign-out">Sign out</button></div>
+    <div class="actions"><button id="sign-in-pending" class="button button-light" type="button" disabled aria-describedby="portal-status">Continue with Discord</button><a hidden id="sign-in" class="button button-light" href="auth/discord">Continue with Discord</a><a class="button button-glass" href="./#join">How to join</a><button hidden class="button button-glass" type="button" id="sign-out">Sign out</button></div>
   </div>
   <div class="portal-grid" id="member-panels" hidden>
     <section class="panel">

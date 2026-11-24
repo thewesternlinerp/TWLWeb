@@ -6,14 +6,14 @@ export const isSnowflake = value => typeof value === 'string' && /^[0-9]{17,20}$
 
 export function readConfig(env) {
   const port = Number(env.PORT || 8787);
-  const origin = new URL(env.PUBLIC_ORIGIN || `http://localhost:${port}`);
+  const origin = new URL(env.PUBLIC_ORIGIN || env.RENDER_EXTERNAL_URL || `http://localhost:${port}`);
   const development = origin.protocol === 'http:' && ['localhost','127.0.0.1'].includes(origin.hostname);
   if (origin.href !== origin.origin + '/' || (!development && origin.protocol !== 'https:')) {
     throw new Error('PUBLIC_ORIGIN must be an HTTPS origin, or HTTP localhost for development.');
   }
   const { DISCORD_CLIENT_ID: clientId, DISCORD_CLIENT_SECRET: clientSecret,
     DISCORD_BOT_TOKEN: botToken, SESSION_SECRET: sessionSecret, APPLICATIONS_CHANNEL_ID: applicationsChannel } = env;
-  const configured = Boolean(clientId || clientSecret || botToken || sessionSecret);
+  const configured = Boolean(clientSecret || botToken);
   if (configured && (!isSnowflake(clientId) || !clientSecret || !botToken || !sessionSecret || Buffer.byteLength(sessionSecret) < 32)) {
     throw new Error('Set DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN and a SESSION_SECRET of at least 32 bytes.');
   }

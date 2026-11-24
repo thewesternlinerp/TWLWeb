@@ -15,15 +15,29 @@ Install Node.js 22 or newer, open PowerShell in this folder and run `node server
 
 ## Connect Discord
 
+### Free Render deployment for TWLWeb
+
+Upload the extracted `render.yaml` to the root of [TWLWeb](https://github.com/thewesternlinerp/TWLWeb). Upload the updated `western-line-portal` folder alongside it. The blueprint uses the existing `main` branch and creates one Free Node web service, with no database or disk. It generates the session key for you.
+
+1. In [Render](https://dashboard.render.com/), choose **New → Blueprint**, connect the TWLWeb repository, and review the Free plan. Application ID `1566252502419247164` is already set. When prompted, enter the OAuth client secret and rotated bot token in Render.
+2. Copy the service's assigned HTTPS URL. In the [Discord Developer Portal](https://discord.com/developers/applications/1566252502419247164/oauth2), add that URL followed by `/auth/callback` under **OAuth2 → Redirects**. Use the exact URL Render assigned. The member portal builds the authorization link with the `identify` scope.
+3. Test the backend's `/api/status` and `/portal.html`, then set `portalOrigin` in GitHub’s `western-line-portal/docs/config.js` to the backend’s HTTPS origin. Keep that file public and only put the backend URL there.
+4. To enable role changes and applications, set `MANAGEABLE_ROLE_IDS` and `APPLICATIONS_CHANNEL_ID` in Render after checking the bot permissions and private channel access below.
+
+Render's Free web service can go idle. The first portal visit after a period of inactivity can take longer while it starts. See [Render's free plan limits](https://render.com/docs/free).
+
+### Discord credentials and manual hosting
+
 1. In the [Discord Developer Portal](https://discord.com/developers/applications), open the Western Line Discord application. On the **Bot** page, reset the token shared in chat. If the same bot is used by your FiveM resources, enter the rotated value in those resources' private server-side settings as well. Keep client secrets, bot tokens and session keys in the hosting service’s secret environment or an ignored local `.env`.
 2. In the application’s **OAuth2** settings, add the exact callback URL: `https://YOUR-BACKEND-HOST/auth/callback`. For local Discord testing, add `http://localhost:8787/auth/callback` too. Copy the application ID and client secret into the variables below.
 3. Make sure the bot is in guild `1566132871163412581`. The portal uses the ordinary Discord HTTP API and the OAuth `identify` scope for sign-in. To enable role management, grant the bot **Manage Roles** and position its highest role above the member roles you want it to change. Review channel overrides as well as guild-wide permissions for every role you allow.
 4. To accept applications, create a private text channel for reviewers. Deny **View Channel** for `@everyone`. Grant access only to the review team and the bot, giving the bot **Send Messages** and **Embed Links** there. Copy its channel ID.
-5. Use a Node 22+ HTTPS host. For example, create a Render Web Service from the GitHub repository with build command `npm install`, start command `npm start` and health check path `/api/status`. The backend serves the same pages from `docs/`. Keep `HOST=0.0.0.0` on this host, use its assigned `PORT`, and configure the variables below.
+5. Use a Node 22+ HTTPS host. For [TWLWeb](https://github.com/thewesternlinerp/TWLWeb) on Render, create a **Web Service** and select **Public Git Repository**. Paste `https://github.com/thewesternlinerp/TWLWeb` and use branch `main`, root directory `western-line-portal`, runtime **Node**, build command `npm install`, start command `npm start` and health check path `/api/status`. Set `HOST=0.0.0.0` and leave `PORT` to Render. Deploy with the four Discord and session variables empty until Render assigns the HTTPS URL.
+6. Set `PUBLIC_ORIGIN` in Render to that HTTPS URL. Add the matching `/auth/callback` redirect to the Discord application, then save the four required variables below together in Render and let it redeploy. Open `/api/status` on the backend to check that it returns `{"configured":true}`, then open `/portal.html` on the backend and test Discord sign-in. Finally, put the backend’s HTTPS origin in `portalOrigin` in GitHub’s `western-line-portal/docs/config.js` and commit the edit to connect the public site. Only the public backend URL belongs in that file.
 
 | Variable | Value |
 | --- | --- |
-| `PUBLIC_ORIGIN` | Backend HTTPS origin with no path |
+| `PUBLIC_ORIGIN` | Backend HTTPS origin with no path. The Render blueprint uses Render's assigned URL automatically. |
 | `DISCORD_CLIENT_ID` | Discord application ID |
 | `DISCORD_CLIENT_SECRET` | OAuth client secret from the same application |
 | `DISCORD_BOT_TOKEN` | Rotated token for the guild bot |
