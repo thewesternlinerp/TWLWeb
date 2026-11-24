@@ -9,18 +9,18 @@ for (const note of document.querySelectorAll('[data-invite-note]')) {
   if (invite) note.hidden = true;
 }
 
-const titles = [
+const locationPhotos = [
   ['sinner-street-police-station','Sinner Street Police Station','Stations'],
-  ['road-policing-unit','Road Policing Unit','Vehicles'],
+  ['road-policing-unit','Road Policing Unit','Stations'],
   ['royal-crusade-hospital','Royal Crusade Hospital','Medical'],
   ['lewisham-police-station','Lewisham Police Station','Stations'],
-  ['custody-vehicle-dock','Custody Vehicle Dock','Vehicles'],
+  ['custody-vehicle-dock','Custody Vehicle Dock','Stations'],
   ['metropolitan-police-service','Metropolitan Police Service','Stations'],
   ['alperton-police-base','Alperton Police Base','Stations'],
   ['london-airport-police-station','London Airport Police Station','Stations'],
   ['sandy-shores-police-station','Sandy Shores Police Station','Stations'],
   ['paleto-bay-police-station','Paleto Bay Police Station','Stations'],
-  ['central-traffic-garage','Central Traffic Garage','Vehicles'],
+  ['central-traffic-garage','Central Traffic Garage','Stations'],
   ...[
     ['020803','2hs9fyVSeyVqOkmLNL5B'],['020728','v3YB7EIgUQtoFALD6agb'],
     ['020702','zXr65uzbtvFYI8OwskHh'],['020630','ZKfzaq9XxZpTvxk2g7ix'],
@@ -29,6 +29,19 @@ const titles = [
     ['020238','ihEz62xFKcRoGNal88UZ'],['020140','yC7oUWoEWSMoRL1cXLFv']
   ].map(([id, original]) => [`station-${id}`,`Station screenshot ${id.match(/../g).join(':')}`,id === '020702' ? 'Medical' : 'Stations',original])
 ];
+
+const vehiclePhotos = [
+  ['vehicle-scania-joint-command','Scania Joint Command Unit','Joint Command'],
+  ['vehicle-met-bmw-x5','Metropolitan Police BMW X5','Police'],
+  ['vehicle-met-bmw-estate-sb68','Metropolitan Police BMW estate (SB68 GJJ)','Police'],
+  ['vehicle-met-bmw-estate-bx15','Metropolitan Police BMW estate (BX15 LDN)','Police'],
+  ['vehicle-las-mustang-mach-e','London Ambulance Service Mustang Mach-E','Ambulance'],
+  ['vehicle-las-pride-sprinter','London Ambulance Service Pride Sprinter','Ambulance'],
+  ['vehicle-lfb-hybrid-fire-engine','London Fire Brigade hybrid fire engine','Fire & Rescue'],
+  ['vehicle-lfb-dennis-fire-engine','London Fire Brigade Dennis fire engine','Fire & Rescue']
+].map(([id,title,service]) => [id,title,'Vehicles',null,service]);
+
+const titles = [...locationPhotos, ...vehiclePhotos];
 
 const grid = document.querySelector('#gallery-grid');
 if (grid) {
@@ -46,12 +59,18 @@ if (grid) {
     const image = document.querySelector('#photo-full');
     image.src = `media/${id}.jpg`;
     image.alt = title;
-    original.hidden = id === titles[0][0] || id === titles[3][0];
-    original.href = source ? `https://kommodo.ai/i/${source}` : `https://westernline-screenshot-gallery.flutteringmixer2.chatgpt.site/images/${id}.png`;
+    original.hidden = id === 'sinner-street-police-station' || id === 'lewisham-police-station';
+    if (source === null) {
+      original.textContent = 'Open full-size photo';
+      original.href = `media/${id}.jpg`;
+    } else {
+      original.textContent = 'Open original';
+      original.href = source ? `https://kommodo.ai/i/${source}` : `https://westernline-screenshot-gallery.flutteringmixer2.chatgpt.site/images/${id}.png`;
+    }
     if (!dialog.open) dialog.showModal();
   }
   function render() {
-    grid.replaceChildren(...photos.slice(0, limit).map(([id, title, category], index) => {
+    grid.replaceChildren(...photos.slice(0, limit).map(([id, title, category,, service], index) => {
       const button = document.createElement('button');
       const img = document.createElement('img');
       const caption = document.createElement('span');
@@ -62,21 +81,22 @@ if (grid) {
       img.alt = '';
       img.loading = 'lazy';
       caption.textContent = title;
-      detail.textContent = category;
+      detail.textContent = service || category;
       button.append(img, caption, detail);
       button.addEventListener('click', () => { opener = button; show(index); });
       return button;
     }));
     more.hidden = limit >= photos.length;
   }
-  for (const button of document.querySelectorAll('[data-filter]')) {
-    button.addEventListener('click', () => {
-      for (const option of document.querySelectorAll('[data-filter]')) option.setAttribute('aria-pressed', String(option === button));
-      photos = button.dataset.filter === 'All' ? titles : titles.filter(item => item[2] === button.dataset.filter);
-      limit = 6;
-      render();
-    });
+  const filters = [...document.querySelectorAll('[data-filter]')];
+  function selectFilter(button) {
+    const filter = button.dataset.filter;
+    for (const option of filters) option.setAttribute('aria-pressed', String(option === button));
+    photos = filter === 'All' ? titles : titles.filter(item => item[2] === filter);
+    limit = filter === 'Vehicles' ? photos.length : 6;
+    render();
   }
+  for (const button of filters) button.addEventListener('click', () => selectFilter(button));
   more.addEventListener('click', () => { const firstNew = limit; limit += 6; render(); grid.children[firstNew]?.focus(); });
   document.querySelector('#photo-prev').addEventListener('click', () => show(active - 1));
   document.querySelector('#photo-next').addEventListener('click', () => show(active + 1));
@@ -85,7 +105,10 @@ if (grid) {
     if (event.key === 'ArrowRight') show(active + 1);
   });
   dialog.addEventListener('close', () => opener?.focus());
-  render();
+  selectFilter(location.hash === '#vehicles' ? document.querySelector('#vehicles') : filters[0]);
+  window.addEventListener('hashchange', () => {
+    if (location.hash === '#vehicles') selectFilter(document.querySelector('#vehicles'));
+  });
 }
 
 document.querySelector('#copy')?.addEventListener('click', async event => {
