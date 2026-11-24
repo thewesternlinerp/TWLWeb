@@ -101,6 +101,12 @@ test('Discord authentication, membership, applications and leadership-only role 
   }
 
   assert.equal((await get('/')).status,200);
+  const dashboard = await get('/portal.html');
+  assert.equal(dashboard.status,200);
+  assert.match(await dashboard.text(), /class="portal-dashboard"/);
+  const dashboardStyle = await get('/portal.css?v=2');
+  assert.equal(dashboardStyle.status,200);
+  assert.match(dashboardStyle.headers.get('Content-Type'), /^text\/css/);
   assert.equal((await get('/media/roundel.png')).status,200);
   assert.equal((await get('/.env')).status,404);
   assert.equal((await get('/api/me')).status,401);

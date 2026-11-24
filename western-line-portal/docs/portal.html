@@ -1,44 +1,171 @@
 <!doctype html>
 <html lang="en-GB">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101723"><title>Member portal | The Western Line</title><link rel="icon" href="media/roundel.png"><link rel="stylesheet" href="style.css"><script type="module" src="portal.js"></script></head>
-<body class="portal-body"><a href="#main" class="skip">Skip to content</a>
-<header class="topbar"><div class="wrap topbar-inner"><a class="brand" href="./"><img src="media/roundel.png" width="38" height="38" alt=""><span>The Western Line<small>London Roleplay</small></span></a><nav aria-label="Main navigation"><a href="./#departments">Departments</a><a href="./#gallery">Gallery</a><a href="./#join">How to join</a></nav><a class="button button-small button-light" href="portal.html">Member portal</a></div></header>
-<main id="main" class="portal-main"><div class="portal-wrap">
-  <div class="portal-card">
-    <p class="kicker"><span></span> The Western Line</p>
-    <h1>Member portal.</h1>
-    <p>Sign in with Discord to view your Western Line roles and apply to a department.</p>
-    <p class="portal-status muted" id="portal-status" role="status">Checking Discord sign-in…</p>
-    <noscript><p>Enable JavaScript to sign in and use the member tools.</p></noscript>
-    <div class="actions"><button id="sign-in-pending" class="button button-light" type="button" disabled aria-describedby="portal-status">Continue with Discord</button><a hidden id="sign-in" class="button button-light" href="auth/discord">Continue with Discord</a><a class="button button-glass" href="./#join">How to join</a><button hidden class="button button-glass" type="button" id="sign-out">Sign out</button></div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10141e">
+  <title>Member portal | The Western Line</title>
+  <link rel="icon" href="media/roundel.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="portal.css?v=2">
+  <script type="module" src="portal.js?v=2"></script>
+</head>
+<body class="portal-dashboard">
+  <a href="#main" class="skip">Skip to content</a>
+  <div class="dashboard-shell">
+    <aside class="dashboard-sidebar">
+      <a class="dashboard-brand" href="./">
+        <img src="media/roundel.png" width="38" height="38" alt="">
+        <span>The Western Line<small>Member portal</small></span>
+      </a>
+      <nav class="dashboard-nav" aria-label="Portal">
+        <a href="#overview" data-view="overview" aria-current="page">Overview</a>
+        <a href="#profile" data-view="profile" hidden>My profile</a>
+        <a href="#applications" data-view="applications" hidden>Applications</a>
+        <a href="#role-management" data-view="role-management" hidden>Manage roles</a>
+      </nav>
+      <nav class="dashboard-community" aria-label="Community">
+        <a href="https://discord.gg/nWnRWxgh8j">Discord</a>
+        <a href="./#join">How to join</a>
+        <a href="./">Public website</a>
+      </nav>
+      <a class="dashboard-privacy" href="privacy.html">Privacy</a>
+    </aside>
+
+    <div class="dashboard-workspace">
+      <header class="dashboard-top">
+        <p id="current-view">Overview</p>
+        <div class="dashboard-session">
+          <span id="session-label">Guest</span>
+          <button class="dashboard-button dashboard-button-quiet" id="sign-out" type="button" hidden>Sign out</button>
+        </div>
+      </header>
+
+      <main id="main" class="dashboard-main" tabindex="-1">
+        <section id="overview" aria-labelledby="welcome-title">
+          <div class="dashboard-hero">
+            <div class="dashboard-hero-copy">
+              <p class="dashboard-kicker">The Western Line</p>
+              <h1 id="welcome-title">Member portal</h1>
+              <p id="welcome-subtitle">Your account and departments for London FiveM roleplay.</p>
+            </div>
+          </div>
+
+          <section class="dashboard-sign-in" id="guest-sign-in" aria-labelledby="sign-in-title">
+            <div>
+              <h2 id="sign-in-title">Sign in to your account</h2>
+              <p id="portal-status" role="status">Checking Discord sign-in…</p>
+              <noscript><p>Enable JavaScript to use Discord sign-in.</p></noscript>
+            </div>
+            <button id="sign-in-pending" class="dashboard-button dashboard-button-primary" type="button" disabled aria-describedby="portal-status">Continue with Discord</button>
+            <a hidden id="sign-in" class="dashboard-button dashboard-button-primary" href="auth/discord">Continue with Discord</a>
+          </section>
+
+          <section class="dashboard-departments" aria-labelledby="departments-title">
+            <h2 id="departments-title">Departments</h2>
+            <div class="department-grid">
+              <article class="department-card department-met">
+                <span class="department-code" aria-hidden="true">MET</span>
+                <h3>Metropolitan Police Service</h3>
+                <p>Response, neighbourhood patrol and roads policing.</p>
+              </article>
+              <article class="department-card department-las">
+                <span class="department-code" aria-hidden="true">LAS</span>
+                <h3>London Ambulance Service</h3>
+                <p>Emergency medicine, patient care and transport.</p>
+              </article>
+              <article class="department-card department-lfb">
+                <span class="department-code" aria-hidden="true">LFB</span>
+                <h3>London Fire Brigade</h3>
+                <p>Fire response, rescue and incident support.</p>
+              </article>
+              <article class="department-card department-civ">
+                <span class="department-code" aria-hidden="true">CIV</span>
+                <h3>Civilian Operations</h3>
+                <p>Create a character and build your own story in London.</p>
+              </article>
+            </div>
+          </section>
+
+          <div class="dashboard-overview-grid">
+            <section class="dashboard-panel" id="overview-account" aria-labelledby="overview-account-title" hidden>
+              <h2 id="overview-account-title">Your account</h2>
+              <p>View your Discord profile and roles in The Western Line.</p>
+              <a class="dashboard-button dashboard-button-quiet" href="#profile">Open my profile</a>
+            </section>
+            <section class="dashboard-panel" aria-labelledby="quick-links-title">
+              <h2 id="quick-links-title">Quick links</h2>
+              <div class="dashboard-links">
+                <a class="dashboard-button dashboard-button-quiet" href="https://discord.gg/nWnRWxgh8j">Open Discord</a>
+                <a class="dashboard-button dashboard-button-quiet" href="https://cfx.re/join/vqqgxbx">Connect to FiveM</a>
+                <a class="dashboard-button dashboard-button-quiet" href="./#join">Joining guide</a>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="profile" class="dashboard-view" aria-labelledby="profile-title" hidden>
+          <h1 id="profile-title">My profile</h1>
+          <div class="dashboard-panel dashboard-profile">
+            <img id="avatar" src="media/roundel.png" alt="" width="58" height="58">
+            <div>
+              <h2 id="member-name"></h2>
+              <p id="member-handle"></p>
+            </div>
+            <span class="dashboard-badge">Discord linked</span>
+          </div>
+          <div class="dashboard-profile-grid">
+            <section class="dashboard-panel" aria-labelledby="roles-title">
+              <header class="dashboard-roles-header">
+                <div><h2 id="roles-title">Discord roles</h2><p id="role-count"></p></div>
+                <label class="dashboard-search" id="role-search-label" hidden>
+                  <span class="visually-hidden">Search Discord roles</span>
+                  <input id="role-search" type="search" placeholder="Find a role" autocomplete="off">
+                </label>
+              </header>
+              <ul class="dashboard-roles" id="role-list"></ul>
+              <p id="no-roles" hidden>You have no additional Discord roles in The Western Line.</p>
+              <p id="no-matching-roles" role="status" hidden>No roles match your search.</p>
+            </section>
+            <section class="dashboard-panel" aria-labelledby="connection-title">
+              <h2 id="connection-title">Discord connection</h2>
+              <p>Your roles come from The Western Line Discord server. Refresh after a role changes.</p>
+              <button type="button" class="dashboard-button dashboard-button-quiet" id="sync">Refresh Discord roles</button>
+              <p class="dashboard-feedback" id="sync-feedback" role="status"></p>
+            </section>
+          </div>
+        </section>
+
+        <section id="applications" class="dashboard-view" aria-labelledby="applications-title" hidden>
+          <h1 id="applications-title">Applications</h1>
+          <div class="dashboard-panel dashboard-form-panel">
+            <h2>Apply to a department</h2>
+            <p>Your application goes to the review team in Discord.</p>
+            <form id="application-form">
+              <label>Department<select name="department" required><option value="">Select a department</option><option value="MET">Metropolitan Police Service</option><option value="LAS">London Ambulance Service</option><option value="LFB">London Fire Brigade</option></select></label>
+              <label>Why would you like to join?<textarea name="message" required minlength="30" maxlength="1000" rows="5" placeholder="Tell us what interests you and any roleplay experience you have."></textarea></label>
+              <button class="dashboard-button dashboard-button-primary" type="submit">Send application</button>
+              <p class="dashboard-feedback" role="status" id="application-feedback"></p>
+            </form>
+          </div>
+        </section>
+
+        <section id="role-management" class="dashboard-view" aria-labelledby="role-management-title" hidden>
+          <h1 id="role-management-title">Manage roles</h1>
+          <div class="dashboard-panel dashboard-form-panel">
+            <h2>Update a member’s Discord roles</h2>
+            <p>Add or remove an approved role for a member of The Western Line.</p>
+            <form id="role-form">
+              <label>Member’s Discord user ID<input name="userId" type="text" inputmode="numeric" required pattern="[0-9]{17,20}" maxlength="20" autocomplete="off"></label>
+              <label>Role<select name="roleId" id="manageable-roles" required></select></label>
+              <label>Action<select name="action"><option value="add">Add role</option><option value="remove">Remove role</option></select></label>
+              <button class="dashboard-button dashboard-button-primary" type="submit">Update role</button>
+              <p class="dashboard-feedback" role="status" id="role-feedback"></p>
+            </form>
+          </div>
+        </section>
+      </main>
+    </div>
   </div>
-  <div class="portal-grid" id="member-panels" hidden>
-    <section class="panel">
-      <div class="identity"><img id="avatar" alt="" width="42" height="42" hidden><div><h2 id="member-name"></h2><p id="member-handle" class="muted"></p></div></div>
-      <h3 class="role-heading">Your Discord roles</h3>
-      <ul class="role-list" id="role-list"></ul><p id="no-roles" class="muted" hidden>You’re a member of The Western Line and have no additional roles.</p>
-      <p class="feedback" id="sync-feedback" role="status"></p>
-      <button type="button" class="button button-glass" id="sync">Refresh Discord roles</button>
-    </section>
-    <section class="panel" id="applications" hidden>
-      <h2>Department application</h2><p class="muted">Your application goes to a private Discord channel for the team to review.</p>
-      <form id="application-form">
-        <label>Department<select name="department" required><option value="">Select a department</option><option value="MET">Metropolitan Police Service</option><option value="LAS">London Ambulance Service</option><option value="LFB">London Fire Brigade</option></select></label>
-        <label>Why would you like to join?<textarea name="message" required minlength="30" maxlength="1000" rows="5" placeholder="Tell us about your interest and any roleplay experience."></textarea></label>
-        <button class="button button-light" type="submit">Send application</button>
-        <p class="feedback" role="status" id="application-feedback"></p>
-      </form>
-    </section>
-    <section class="panel" id="role-management" hidden>
-      <h2>Manage Discord roles</h2><p class="muted">Add or remove an approved role for a member of The Western Line.</p>
-      <form id="role-form">
-        <label>Member’s Discord user ID<input name="userId" type="text" inputmode="numeric" required pattern="[0-9]{17,20}" maxlength="20" autocomplete="off"></label>
-        <label>Role<select name="roleId" id="manageable-roles" required></select></label>
-        <label>Action<select name="action"><option value="add">Add role</option><option value="remove">Remove role</option></select></label>
-        <button class="button button-light" type="submit">Update role</button>
-        <p class="feedback" role="status" id="role-feedback"></p>
-      </form>
-    </section>
-  </div>
-</div></main>
-<footer><div class="wrap footer-inner"><a class="brand" href="./"><img src="media/roundel.png" width="32" height="32" alt=""><span>The Western Line</span></a><p>Community support via Discord</p><a href="privacy.html">Privacy</a></div></footer></body></html>
+</body>
+</html>

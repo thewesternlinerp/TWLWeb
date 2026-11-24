@@ -12,7 +12,7 @@ const departments = new Map([
   ['MET','Metropolitan Police Service'],['LAS','London Ambulance Service'],['LFB','London Fire Brigade']
 ]);
 const mediaTypes = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.jpg':'image/jpeg','.png':'image/png'};
-const publicFiles = new Set(['/index.html','/portal.html','/privacy.html','/config.js','/portal.js','/site.js','/style.css']);
+const publicFiles = new Set(['/index.html','/portal.html','/privacy.html','/config.js','/portal.js','/site.js','/style.css','/portal.css']);
 // Never grant Discord roles carrying these guild-wide moderator or administration permissions.
 const restrictedPermissions = [1,2,3,4,5,7,13,21,22,23,24,28,29,30,33,34,36,38,40,41,43,44,46,52].reduce((mask, bit) => mask | (1n << BigInt(bit)), 0n);
 
