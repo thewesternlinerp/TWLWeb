@@ -1,0 +1,6 @@
+fx_version 'cerulean'
+game 'gta5'
+description 'Publish Western Line character, playtime and CAD summaries to the member portal'
+version '1.0.0'
+server_only 'yes'
+server_script 'server.lua'

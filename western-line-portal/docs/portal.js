@@ -12,6 +12,7 @@ let currentView = 'overview';
 let memberRoles = [];
 let sessionVersion = 0;
 let memberId = '';
+let fivemRequest;
 const communityViews = new Set(['applications','tickets','announcements']);
 const feedRequests = new Map();
 
@@ -53,6 +54,7 @@ function showView(requested = location.hash.slice(1), moveFocus = false) {
   }
   element('current-view').textContent = selected.textContent;
   if (communityViews.has(currentView) && previous !== currentView) loadFeed(currentView);
+  if (currentView === 'fivem' && previous !== currentView) loadFiveM();
   if (moveFocus && previous !== currentView) {
     element('main').focus();
     window.scrollTo(0, 0);
@@ -98,7 +100,7 @@ function populate(member) {
   roleSelect.replaceChildren(...manageableRoles.map(role => new Option(role.name, role.id)));
   if (manageableRoles.some(role => role.id === previousRole)) roleSelect.value = previousRole;
 
-  const available = new Set(['overview', 'profile']);
+  const available = new Set(['overview', 'profile', 'fivem']);
   if (applicationsEnabled) {
     available.add('applications');
     available.add('tickets');
@@ -122,6 +124,9 @@ function showSignedOut(message) {
   element('member-handle').textContent = '';
   element('avatar').src = 'media/roundel.png';
   element('manageable-roles').replaceChildren();
+  element('fivem-details').hidden = true;
+  element('fivem-cad-list').replaceChildren();
+  element('fivem-status').textContent = '';
   for (const badge of document.querySelectorAll('[data-department-role]')) badge.hidden = true;
   for (const feed of communityViews) {
     element(`${feed}-list`).replaceChildren();
@@ -258,10 +263,51 @@ async function loadFeed(feed) {
   }
 }
 
+async function loadFiveM() {
+  const message = element('fivem-status');
+  const details = element('fivem-details');
+  const button = element('fivem-refresh');
+  const version = sessionVersion;
+  const ticket = Symbol('FiveM activity');
+  fivemRequest = ticket;
+  button.disabled = true;
+  details.hidden = true;
+  message.textContent = 'Checking FiveM activity…';
+  try {
+    const {configured,player} = await request('api/fivem');
+    if (fivemRequest !== ticket || version !== sessionVersion) return;
+    if (!player) {
+      message.textContent = configured ? 'Join FiveM with this Discord account to sync your activity.'
+        : 'The portal is waiting for the FiveM server connection.';
+      return;
+    }
+    message.textContent = player.online ? 'Online in FiveM' : 'Last seen ' + displayDate(player.observedAt);
+    const character = {saved:'Saved appearance linked',none:'No saved appearance',unavailable:'Character resource unavailable'};
+    element('fivem-character').textContent = character[player.character];
+    const minutes = Math.floor(player.playSeconds/60);
+    element('fivem-time').textContent = `${Math.floor(minutes/60)}h ${minutes%60}m`;
+    element('fivem-since').textContent = 'Tracked since ' + displayDate(player.trackedSince);
+    element('fivem-cad-status').textContent = player.cadAvailable
+      ? player.incidents.length ? '' : 'No incidents assigned to your unit.'
+      : 'Assignments are available when connected and on an eligible shift.';
+    element('fivem-cad-list').replaceChildren(...player.incidents.map(incident => {
+      const row = document.createElement('li');
+      row.append(textNode('h3',`Incident #${incident.id}`),textNode('span',incident.status,'request-status'),textNode('p',incident.priority));
+      return row;
+    }));
+    details.hidden = false;
+  } catch (error) {
+    if (fivemRequest === ticket && version === sessionVersion) message.textContent = error.message;
+  } finally {
+    if (fivemRequest === ticket) button.disabled = false;
+  }
+}
+
 window.addEventListener('hashchange', () => {
   if (location.hash !== '#main') showView(location.hash.slice(1), true);
 });
 roleSearch.addEventListener('input', renderRoles);
+element('fivem-refresh').addEventListener('click', loadFiveM);
 element('sync').addEventListener('click', event => {
   handleAction(event.currentTarget, element('sync-feedback'), async () => {
     const version = sessionVersion;

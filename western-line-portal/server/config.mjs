@@ -13,7 +13,7 @@ export function readConfig(env) {
   }
   const { DISCORD_CLIENT_ID: clientId, DISCORD_CLIENT_SECRET: clientSecret,
     DISCORD_BOT_TOKEN: botToken, SESSION_SECRET: sessionSecret, APPLICATIONS_CHANNEL_ID: applicationsChannel,
-    ANNOUNCEMENTS_CHANNEL_ID: announcementsChannel } = env;
+    ANNOUNCEMENTS_CHANNEL_ID: announcementsChannel, FIVEM_BRIDGE_SECRET: bridgeSecret } = env;
   const configured = Boolean(clientSecret || botToken);
   if (configured && (!isSnowflake(clientId) || !clientSecret || !botToken || !sessionSecret || Buffer.byteLength(sessionSecret) < 32)) {
     throw new Error('Set DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_BOT_TOKEN and a SESSION_SECRET of at least 32 bytes.');
@@ -23,9 +23,12 @@ export function readConfig(env) {
     || [applicationsChannel, announcementsChannel].some(id => id && !isSnowflake(id))) {
     throw new Error('Check your Discord role and channel IDs.');
   }
+  if (bridgeSecret && !/^[A-Za-z0-9_-]{32,128}$/.test(bridgeSecret)) {
+    throw new Error('FIVEM_BRIDGE_SECRET must be a random URL-safe key.');
+  }
   return {
     configured, port, origin: origin.origin, secure: !development, clientId, clientSecret, botToken,
-    sessionSecret: sessionSecret || randomBytes(32), roleIds: new Set(roleIds), applicationsChannel, announcementsChannel,
+    sessionSecret: sessionSecret || randomBytes(32), roleIds: new Set(roleIds), applicationsChannel, announcementsChannel, bridgeSecret,
     redirectUri: new URL('/auth/callback', origin).href
   };
 }

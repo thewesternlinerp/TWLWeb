@@ -12,11 +12,13 @@ const adminRole = '123450000000000003';
 const channel = '123450000000000004';
 const announcements = '123450000000000006';
 const announcementId = '123450000000000007';
+const bridge = 'fake-fivem-bridge-key-for-testing-only';
 const origin = 'https://portal.example.test';
 const config = readConfig({
   PUBLIC_ORIGIN:origin, DISCORD_CLIENT_ID:'123450000000000005', DISCORD_CLIENT_SECRET:'fake-secret',
   DISCORD_BOT_TOKEN:'fake-bot-test-token', SESSION_SECRET:'fake-session-key-for-integration-tests-only',
-  MANAGEABLE_ROLE_IDS:`${role},${adminRole}`, APPLICATIONS_CHANNEL_ID:channel, ANNOUNCEMENTS_CHANNEL_ID:announcements
+  MANAGEABLE_ROLE_IDS:`${role},${adminRole}`, APPLICATIONS_CHANNEL_ID:channel,
+  ANNOUNCEMENTS_CHANNEL_ID:announcements, FIVEM_BRIDGE_SECRET:bridge
 });
 
 test('Render uses its public HTTPS URL and can boot before Discord is connected', () => {
@@ -176,6 +178,28 @@ test('Discord authentication, membership, applications and leadership-only role 
   assert.equal((await (await get('/api/tickets',memberSession)).json()).records[0].status,'Closed');
   assert.equal((await get('/api/announcements',memberSession)).status,403);
   assert.equal((await (await get('/api/announcements',leaderSession)).json()).posts[0].text,'Server opening');
+
+  const observedAt = Date.now();
+  const player = {discordId:member, observedAt, trackedSince:observedAt - 100000,
+    playSeconds:60, online:true, character:'saved', cadAvailable:true,
+    incidents:[{id:1,status:'Assigned',priority:'Emergency',location:'Do not expose'}]};
+  const sync = (value, players) => fetch(base + '/api/fivem/sync',{
+    method:'POST',headers:{Authorization:`Bearer ${value}`,'Content-Type':'application/json'},body:JSON.stringify({players})
+  });
+  assert.equal((await get('/api/fivem')).status,401);
+  assert.equal((await sync('incorrect',[player])).status,401);
+  assert.equal((await sync(bridge,[player,{...player}])).status,400);
+  assert.equal((await sync(bridge,[player])).status,200);
+  const activity = await (await get('/api/fivem',memberSession)).json();
+  assert.equal(activity.player.playSeconds,60);
+  assert.deepEqual(activity.player.incidents,[{id:1,status:'Assigned',priority:'Emergency'}]);
+  assert.equal((await (await get(`/api/fivem?id=${member}`,leaderSession)).json()).player,null);
+  const offline = {...player, observedAt:observedAt + 1000, online:false, cadAvailable:false, incidents:undefined};
+  assert.equal((await sync(bridge,[offline])).status,200);
+  assert.equal((await sync(bridge,[player])).status,200);
+  const latest = await (await get('/api/fivem',memberSession)).json();
+  assert.equal(latest.player.online,false);
+  assert.deepEqual(latest.player.incidents,[]);
 
   membership.delete(member);
   assert.equal((await get('/api/me',memberSession)).status,403);

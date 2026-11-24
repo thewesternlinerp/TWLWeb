@@ -7,8 +7,8 @@
   <title>Member portal | The Western Line</title>
   <link rel="icon" href="media/roundel.png">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="portal.css?v=3">
-  <script type="module" src="portal.js?v=3"></script>
+  <link rel="stylesheet" href="portal.css?v=4">
+  <script type="module" src="portal.js?v=4"></script>
 </head>
 <body class="portal-dashboard">
   <a href="#main" class="skip">Skip to content</a>
@@ -21,6 +21,7 @@
       <nav class="dashboard-nav" aria-label="Portal">
         <a href="#overview" data-view="overview" aria-current="page">Overview</a>
         <a href="#profile" data-view="profile" hidden>My profile</a>
+        <a href="#fivem" data-view="fivem" hidden>FiveM activity</a>
         <a href="#applications" data-view="applications" hidden>Applications</a>
         <a href="#tickets" data-view="tickets" hidden>Support tickets</a>
         <a href="#announcements" data-view="announcements" hidden>Announcements</a>
@@ -138,6 +139,29 @@
               <p>Your roles come from The Western Line Discord server. Refresh after a role changes.</p>
               <button type="button" class="dashboard-button dashboard-button-quiet" id="sync">Refresh Discord roles</button>
               <p class="dashboard-feedback" id="sync-feedback" role="status"></p>
+            </section>
+          </div>
+        </section>
+
+        <section id="fivem" class="dashboard-view" aria-labelledby="fivem-title" hidden>
+          <h1 id="fivem-title">FiveM activity</h1>
+          <div class="dashboard-panel" id="fivem-connection">
+            <p id="fivem-status" role="status"></p>
+            <div class="dashboard-links">
+              <button type="button" class="dashboard-button dashboard-button-quiet" id="fivem-refresh">Refresh activity</button>
+              <a class="dashboard-button dashboard-button-quiet" href="https://cfx.re/join/vqqgxbx">Connect to FiveM</a>
+            </div>
+          </div>
+          <div class="dashboard-overview-grid" id="fivem-details" hidden>
+            <section class="dashboard-panel">
+              <h2>Character</h2><p id="fivem-character"></p>
+            </section>
+            <section class="dashboard-panel">
+              <h2>Playtime</h2><p id="fivem-time"></p><p id="fivem-since"></p>
+            </section>
+            <section class="dashboard-panel">
+              <h2>Your CAD assignments</h2><p id="fivem-cad-status"></p>
+              <ul class="request-list" id="fivem-cad-list"></ul>
             </section>
           </div>
         </section>

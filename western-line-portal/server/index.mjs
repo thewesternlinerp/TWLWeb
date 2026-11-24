@@ -5,6 +5,7 @@ import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { guildId, isSnowflake, leaders, openSeal, readConfig, seal } from './config.mjs';
 import { createCommunity } from './community.mjs';
+import { createFiveMBridge } from './fivem.mjs';
 
 const discordApi = 'https://discord.com/api/v10';
 const discordUserAgent = 'DiscordBot (https://github.com/thewesternlinerp/TWLWeb, 1.0.0)';
@@ -42,8 +43,7 @@ function setCookie(response, config, name, value, seconds) {
   response.setHeader('Set-Cookie', [...existing, `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${seconds}${secure}`]);
 }
 
-async function jsonInput(request, config) {
-  if (request.headers.origin !== config.origin) throw new HttpError(403, 'Open the member portal directly and try again.');
+async function readJson(request) {
   if (request.headers['content-type']?.split(';')[0] !== 'application/json') throw new HttpError(415, 'Expected JSON.');
   const chunks = [];
   let size = 0;
@@ -59,6 +59,11 @@ async function jsonInput(request, config) {
   } catch {
     throw new HttpError(400, 'Invalid request.');
   }
+}
+
+async function jsonInput(request, config) {
+  if (request.headers.origin !== config.origin) throw new HttpError(403, 'Open the member portal directly and try again.');
+  return readJson(request);
 }
 
 async function serveStatic(request, response, pathname) {
@@ -101,6 +106,7 @@ export function createHandler(config, fetchDiscord = fetch) {
     return response.json();
   }
   const community = createCommunity(config, discord, HttpError);
+  const fivem = createFiveMBridge(config.bridgeSecret, HttpError);
 
   async function memberById(id) {
     const member = await discord(`${guildPath}/members/${id}`);
@@ -210,6 +216,14 @@ export function createHandler(config, fetchDiscord = fetch) {
         return reply(response,200,{signedOut:true});
       }
       if (request.method === 'GET' && pathname === '/api/me') return reply(response,200,await profile(await authenticate(request)));
+      if (request.method === 'GET' && pathname === '/api/fivem') {
+        const auth = await authenticate(request);
+        return reply(response,200,fivem.profile(auth.id));
+      }
+      if (request.method === 'POST' && pathname === '/api/fivem/sync') {
+        fivem.verify(request.headers.authorization);
+        return reply(response,200,fivem.accept(await readJson(request)));
+      }
       if (request.method === 'GET' && pathname === '/api/announcements') {
         return reply(response,200,await community.announcements(await authenticate(request)));
       }
