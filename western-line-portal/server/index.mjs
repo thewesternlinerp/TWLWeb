@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { guildId, isSnowflake, leaders, openSeal, readConfig, seal } from './config.mjs';
 
 const discordApi = 'https://discord.com/api/v10';
+const discordUserAgent = 'DiscordBot (https://github.com/thewesternlinerp/TWLWeb, 1.0.0)';
 const guildPath = `/guilds/${guildId}`;
 const departments = new Map([
   ['MET','Metropolitan Police Service'],['LAS','London Ambulance Service'],['LFB','London Fire Brigade']
@@ -89,7 +90,7 @@ export function createHandler(config, fetchDiscord = fetch) {
     try {
       response = await fetchDiscord(discordApi + path, {
         method:options.method || 'GET',
-        headers:{ Authorization:auth, 'Content-Type':'application/json', ...options.headers },
+        headers:{ Authorization:auth, 'User-Agent':discordUserAgent, 'Content-Type':'application/json', ...options.headers },
         body: options.body ? JSON.stringify(options.body) : undefined,
         signal:AbortSignal.timeout(9000)
       });
@@ -139,7 +140,7 @@ export function createHandler(config, fetchDiscord = fetch) {
     if (search.has('error') || !search.get('code')) return redirect(response, '/portal.html?auth=denied');
     try {
       const tokens = await fetchDiscord(discordApi + '/oauth2/token', {
-        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        method:'POST', headers:{'User-Agent':discordUserAgent,'Content-Type':'application/x-www-form-urlencoded'},
         body:new URLSearchParams({client_id:config.clientId,client_secret:config.clientSecret,grant_type:'authorization_code',
           code:search.get('code'),redirect_uri:config.redirectUri}), signal:AbortSignal.timeout(9000)
       });

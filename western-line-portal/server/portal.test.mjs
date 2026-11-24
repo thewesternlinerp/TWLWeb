@@ -42,6 +42,7 @@ test('Discord authentication, membership, applications and leadership-only role 
   let isChannelPrivate = true;
   async function discordTestDouble(url, {method, body, headers}) {
     assert.equal(new URL(url).hostname, 'discord.com');
+    assert.match(headers['User-Agent'], /^DiscordBot \(/);
     const path = new URL(url).pathname.replace('/api/v10','');
     if (path === '/oauth2/token') {
       assert.equal(body.get('redirect_uri'), origin + '/auth/callback');
